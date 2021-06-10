@@ -1,2 +1,2 @@
 # itrStudy
-This repository is for learning assignments
+This repository is for learning assignments from tasks.
