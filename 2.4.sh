@@ -1,31 +1,44 @@
 #!/bin/bash
 
-#tee out_$(date +%g%m%d_%H%S).log
-#exec 2>error.log
-#cat mistake
-#echo "file not exist!!!!!">&2
-#exec(
-#exec 2>error.log
-exec 1> >(tee out_$(date +%g%m%d_%H%S).log)
+# Решил коряво, ибо не смог разобраться,
+exec > >(tee out_$(date +%g%m%d_%H%S).log)  2> >(tee stderr.log >/dev/null)
+# что с перенаправлением во втором случае... Файл просто не писался
 
-read -p "Please, input source directory:" source_dir
-read -p "Please, input destination directory:" destination_dir
+echo "Please, input source directory:"
+read source_dir
+echo "Please, input destination directory:"
+read destination_dir
 RealPath_source=$(realpath $source_dir)
 RealPath_destin=$(realpath $destination_dir)
 OccupPlace=$(du -s $source_dir | cut -f1)
 AvailSpace=$(df $destination_dir | awk '{print $4}' | tail -n 1)
 # Define added functions
+exit_f () { # Final function for checking result & display a warning
+cd ../
+ELOG=$( cat stderr.log | wc -l )
+if ! [[ $ELOG == 0 ]];
+then
+echo -e "\033[31m'Warning: ${ELOG} error's occurred!'\033[0m"
+fi
+rm stderr.log
+}
 date_gz(){ # Numbering archives by time
   name=$(date +%g%m%d_%H%S)   #take time&date now
   cd $RealPath_source         #enter into source directory
   # Compress by gzip/make date-name/archive into destination directory
   tar -zcf "$source_dir"_$name.gz *
   mv "$source_dir"_$name.gz $RealPath_destin
-  cat mistake #файл_ошибка спец
+  cat mistake # file mistake for check algorithm
+  cat mistake2
+  cat mistake3
+  cat mistake4
+  cat mistake5
+  exit_f
 }
 iterat_ar(){ #Make archives by one by one
   cd $RealPath_source         #enter into source directory
-  read -p "Input Max quantity of copy:" x_copy
+  echo "Input Max quantity of copy:"
+  read  x_copy
     d_copy=$(($x_copy-1))
     x_copy=$(($x_copy-1))
   while [[ $x_copy -ge 0 ]]; do
@@ -34,6 +47,8 @@ iterat_ar(){ #Make archives by one by one
     x_copy=$(($x_copy-1))
   done
   rm $RealPath_destin/0"$d_copy"_$name.gz
+  #Check mistake
+  exit_f
 }
 echo
 #Test source_dir
@@ -84,4 +99,3 @@ if (("$OccupPlace" < "$AvailSpace")); then
       esac
 done
 fi
-#) |tee out_$(date +%g%m%d_%H%S).log
